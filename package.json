@@ -1,0 +1,33 @@
+{
+  "name": "figma-designsystem-plugin",
+  "version": "0.1.0",
+  "description": "Figma Design System Plugin",
+  "private": true,
+  "scripts": {
+    "build": "build-figma-plugin --typecheck --minify",
+    "watch": "build-figma-plugin --typecheck --watch"
+  },
+  "figma-plugin": {
+    "name": "figma-designsystem-plugin",
+    "id": "figma-designsystem-plugin-dev",
+    "api": "1.0.0",
+    "main": {
+      "src": "src/main.ts",
+      "handler": "default"
+    },
+    "ui": {
+      "src": "src/ui.tsx",
+      "handler": "default"
+    }
+  },
+  "dependencies": {
+    "@create-figma-plugin/ui": "^3",
+    "@create-figma-plugin/utilities": "^3",
+    "preact": "^10"
+  },
+  "devDependencies": {
+    "@create-figma-plugin/build": "^3",
+    "@figma/plugin-typings": "*",
+    "typescript": "^5"
+  }
+}

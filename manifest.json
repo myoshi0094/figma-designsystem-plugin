@@ -1,0 +1,10 @@
+{
+  "api": "1.0.0",
+  "editorType": [
+    "figma"
+  ],
+  "id": "figma-designsystem-plugin-dev",
+  "name": "figma-designsystem-plugin",
+  "main": "build/main.js",
+  "ui": "build/ui.js"
+}
