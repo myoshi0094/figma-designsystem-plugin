@@ -33,14 +33,14 @@ Figma レイヤー名の `/` 区切りはネスト構造として展開されま
 ## セットアップ
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## 開発
 
 ```bash
 # ウォッチモード（型チェック付き）
-npm run watch
+pnpm watch
 ```
 
 1. Figma Desktop を開く
@@ -50,7 +50,7 @@ npm run watch
 ## ビルド
 
 ```bash
-npm run build
+pnpm build
 ```
 
 `build/` ディレクトリにバンドル済みファイルが出力されます。
