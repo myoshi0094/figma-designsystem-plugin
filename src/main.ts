@@ -126,7 +126,7 @@ export default function () {
     for (const node of selection) {
       if (!hasFills(node)) continue
 
-      const fills = [...node.fills] as Paint[]
+      const fills = [...node.fills]
       let hasNonBrand = false
 
       const updatedFills = fills.map(function (fill) {

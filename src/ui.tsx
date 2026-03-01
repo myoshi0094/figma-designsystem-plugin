@@ -8,7 +8,7 @@ import {
   VerticalSpace,
 } from '@create-figma-plugin/ui'
 import { emit, on } from '@create-figma-plugin/utilities'
-import { useCallback, useEffect, useState } from 'preact/hooks'
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks'
 
 // ─── イベントハンドラ型定義 ────────────────────────────────────────────────
 
@@ -60,11 +60,12 @@ const FORMAT_OPTIONS: Array<{ value: OutputFormat; children: string }> = [
 
 /** opacity < 1 のとき rgba 表記、それ以外は hex をそのまま返す */
 function colorValue(token: ColorTokenData): string {
-  if (token.opacity >= 1) return token.hex
+  const opacity = Math.min(1, Math.max(0, token.opacity))
+  if (opacity >= 1) return token.hex
   const r = parseInt(token.hex.slice(1, 3), 16)
   const g = parseInt(token.hex.slice(3, 5), 16)
   const b = parseInt(token.hex.slice(5, 7), 16)
-  return `rgba(${r}, ${g}, ${b}, ${token.opacity.toFixed(2)})`
+  return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(2)})`
 }
 
 /**
@@ -73,7 +74,7 @@ function colorValue(token: ColorTokenData): string {
  * fillIndex > 0 の場合は "-2", "-3"... を末尾に追加
  */
 function toTokenKey(layerName: string, fillIndex: number): string {
-  const base = layerName
+  const parts = layerName
     .split('/')
     .map(p =>
       p
@@ -82,7 +83,8 @@ function toTokenKey(layerName: string, fillIndex: number): string {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
     )
-    .join('-')
+    .filter(Boolean)
+  const base = parts.length > 0 ? parts.join('-') : 'unnamed'
   return fillIndex > 0 ? `${base}-${fillIndex + 1}` : base
 }
 
@@ -149,6 +151,7 @@ function getOutput(format: OutputFormat, tokens: ColorTokenData[]): string {
     case 'token':    return formatDesignToken(tokens)
     case 'css':      return formatCssVars(tokens)
     case 'tailwind': return formatTailwind(tokens)
+    default:         return ''
   }
 }
 
@@ -161,6 +164,7 @@ function Plugin() {
   const [tokens,         setTokens]         = useState<ColorTokenData[]>([])
   const [outputFormat,   setOutputFormat]   = useState<OutputFormat>('token')
   const [copied,         setCopied]         = useState(false)
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // main.ts からのイベントを購読
   useEffect(function () {
@@ -198,13 +202,20 @@ function Plugin() {
     emit<ExtractColorsHandler>('EXTRACT_COLORS')
   }, [])
 
+  useEffect(function () {
+    return function () {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+    }
+  }, [])
+
   const handleCopy = useCallback(
     function () {
       const text = getOutput(outputFormat, tokens)
       if (!text) return
       navigator.clipboard.writeText(text).then(function () {
+        if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
         setCopied(true)
-        setTimeout(function () { setCopied(false) }, 2000)
+        copiedTimerRef.current = setTimeout(function () { setCopied(false) }, 2000)
       })
     },
     [outputFormat, tokens]
@@ -214,7 +225,7 @@ function Plugin() {
 
   // hex が重複しないスウォッチ一覧（デザイン確認用）
   const uniqueSwatches = tokens.filter(
-    (t, i, arr) => arr.findIndex(s => s.hex === t.hex) === i
+    (t, i, arr) => arr.findIndex(s => s.hex === t.hex && s.opacity === t.opacity) === i
   )
 
   return (
@@ -304,7 +315,9 @@ function Plugin() {
           <SegmentedControl
             options={FORMAT_OPTIONS}
             value={outputFormat}
-            onValueChange={function (v) { setOutputFormat(v as OutputFormat) }}
+            onValueChange={function (v) {
+              if (FORMAT_OPTIONS.some(o => o.value === v)) setOutputFormat(v as OutputFormat)
+            }}
           />
 
           <VerticalSpace space="extraSmall" />
